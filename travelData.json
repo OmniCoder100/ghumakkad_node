@@ -1,8 +1,8 @@
 {
   "cities": [
     {
-      "city": "Manali",
-      "state": "Himachal Pradesh",
+      "city": "Amritsar",
+      "state": "Punjab",
       "avgHotelPerNight": 2000,
       "avgFoodPerDay": 700,
       "petrolPerKm": 4.5,

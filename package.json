@@ -3,16 +3,41 @@
   "version": "1.0.0",
   "type": "module",
   "scripts": {
-    "dev": "nodemon index.js",
-    "start": "node index.js"
+    "dev": "node --loader ts-node/esm src/server.ts",
+    "ingest": "node --loader ts-node/esm src/ingest.ts",
+    "start": "node dist/index.js",
+    "build": "tsc",
+    "test": "vitest",
+    "debug": "node --loader ts-node/esm src/debug_sql.ts",
+    "debug-admin": "node --loader ts-node/esm src/debug_admin_sql.ts"
   },
   "dependencies": {
+    "@chroma-core/default-embed": "^0.1.8",
+    "@google/generative-ai": "^0.24.1",
+    "@langchain/community": "^1.0.0",
+    "@langchain/core": "^1.0.2",
+    "@langchain/google-genai": "^0.0.22",
+    "@langchain/textsplitters": "^1.0.0",
+    "@supabase/supabase-js": "^2.78.0",
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.5",
+    "@types/jsonwebtoken": "^9.0.10",
+    "@types/node": "^24.10.0",
     "cors": "^2.8.5",
     "dotenv": "^16.6.1",
     "express": "^4.21.2",
-    "openai": "^4.8.0"
+    "express-rate-limit": "^8.2.1",
+    "jsonwebtoken": "^9.0.2",
+    "jwks-rsa": "^3.2.0",
+    "langchain": "^1.0.2",
+    "ts-node-dev": "^2.0.0",
+    "typescript": "^5.9.3"
   },
   "devDependencies": {
-    "nodemon": "^2.0.22"
+    "@types/supertest": "^6.0.3",
+    "nodemon": "^2.0.22",
+    "supertest": "^7.1.4",
+    "ts-node": "^10.9.2",
+    "vitest": "^4.0.6"
   }
 }
