@@ -1,7 +1,6 @@
 {
   "name": "travel-chatbot-server",
   "version": "1.0.0",
-  "type": "module",
   "scripts": {
     "dev": "node --loader ts-node/esm src/server.ts",
     "ingest": "node --loader ts-node/esm src/ingest.ts",
