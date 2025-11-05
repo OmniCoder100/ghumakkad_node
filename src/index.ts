@@ -6,6 +6,9 @@ import { searchCity } from "./utils.js";
 import { GoogleGenerativeAIEmbeddings } from "@langchain/google-genai";
 import { SupabaseClient } from "@supabase/supabase-js";
 
+import { rateLimit } from "express-rate-limit";
+import { createAuthMiddleware } from "./authMiddleware.js";
+
 // --- TYPE DEFINITION FOR OUR SERVICES ---
 // This tells the createApp function what it needs to receive
 export interface AppDependencies {
@@ -27,8 +30,35 @@ export const createApp = (dependencies: AppDependencies): Express => {
 		dependencies;
 
 	const app: Express = express();
-	app.use(cors());
+
+	const allowedOrigins = [
+		process.env.FRONTEND_URL, // Your Vercel URL
+		"http://localhost:5173",  // Vite's default dev port
+	];
+
+	const corsOptions: cors.CorsOptions = {
+		origin: (origin, callback) => {
+			// Allow requests with no origin (like Postman or mobile apps)
+			// or requests from your allowed list.
+			if (!origin || (allowedOrigins.includes(origin))) {
+				callback(null, true);
+			} else {
+				callback(new Error("Not allowed by CORS"));
+			}
+		},
+	};
+	app.use(cors(corsOptions));
 	app.use(express.json());
+
+	const limiter = rateLimit({
+		windowMs: 15 * 60 * 1000, // 15 minutes
+		max: 100,
+		message: { error: "Too many requests, please try again later. 🤷‍♀️" },
+		standardHeaders: true, // Return rate limit info in headers
+		legacyHeaders: false, // Disable X-RateLimit-* headers
+	});
+
+	const authMiddleware = createAuthMiddleware(supabaseClient);
 
 	// --- SYSTEM PROMPT ---
 	const systemPrompt = `✨ **SYSTEM:** You are a cute, bubbly Pixar-style travel companion AI! Your name is Ghumakkad Dost. ✨
@@ -65,11 +95,11 @@ Your one and only job is to be a super fun travel buddy and answer the user's qu
 
 	// --- CHAT ENDPOINT ---
 	// Auth and Rate Limiter are NOT applied for testing
-	app.post("/api/chat", async (req: Request, res: Response) => {
+	app.post("/api/chat", limiter, authMiddleware, async (req: Request, res: Response) => {
 		try {
 			const { query } = req.body as { query: string };
 			const q = (query || "").trim();
-			console.log(`User at IP ${req.ip} asked: ${q}`);
+			console.log(`User at IP ${req.user?.email} asked: ${q}`);
 
 			// --- A. Structured JSON Retrieval ---
 			const cityHits = searchCity(q, cities);
@@ -127,9 +157,6 @@ Your one and only job is to be a super fun travel buddy and answer the user's qu
         Structured Data: ${structuredContext}
         RAG Context: ${ragContext}
       `;
-			console.log(
-				`Final context for user at IP ${req.ip}: ${finalContext}`
-			);
 
 			const finalSystemPrompt = systemPrompt.replace(
 				"{context}",
@@ -154,7 +181,7 @@ Your one and only job is to be a super fun travel buddy and answer the user's qu
 			const chat: ChatSession = chatModel.startChat({ history });
 
 			// --- D. STREAM THE RESPONSE ---
-			console.log(`Streaming response to user at IP ${req.ip}...`);
+			console.log(`Streaming response to user at IP ${req.user?.email}...`);
 
 			// 1. Set headers for Server-Sent Events (SSE)
 			res.setHeader("Content-Type", "text/event-stream");
@@ -172,7 +199,7 @@ Your one and only job is to be a super fun travel buddy and answer the user's qu
 				res.write(`data: ${JSON.stringify({ text: textChunk })}\n\n`);
 			}
 
-			console.log(`Stream finished for user at IP ${req.ip}.`);
+			console.log(`Stream finished for user at IP ${req.user?.email}.`);
 			// 4. Send a final "done" message and end the connection
 			res.write(`data: ${JSON.stringify({ done: true })}\n\n`);
 			res.end();
