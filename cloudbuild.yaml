@@ -28,3 +28,9 @@ steps:
 # Tell Cloud Build to use the "latest" image we just built
 images:
 - 'asia-south1-docker.pkg.dev/$PROJECT_ID/ghumakkad-repo/ghumakkad-backend:latest'
+
+# --- THIS IS THE FIX ---
+# Add this block to tell Cloud Build to use standard logging
+# instead of a dedicated log bucket, which resolves the permission error.
+options:
+  logging: CLOUD_LOGGING_ONLY
