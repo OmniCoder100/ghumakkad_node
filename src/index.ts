@@ -89,7 +89,10 @@ Your one and only job is to be a super fun travel buddy and answer the user's qu
 			// 1. Create the query vector using the same embedder
 			console.log("Generating query vector...");
 			const queryVector = await geminiEmbedder.embedQuery(q);
-			console.log("Query vector generated. with length:", queryVector.length);
+			console.log(
+				"Query vector generated. with length:",
+				queryVector.length
+			);
 
 			// 2. Call the SQL function directly
 			console.log(`Calling Supabase RPC '${dbQueryName}'...`);
@@ -150,16 +153,43 @@ Your one and only job is to be a super fun travel buddy and answer the user's qu
 
 			const chat: ChatSession = chatModel.startChat({ history });
 
-			const result = await chat.sendMessage(q); // Send the user's actual query
-			const response = result.response;
-			console.log(`Response to user at IP ${req.ip}: ${response.text()}`);
+			// --- D. STREAM THE RESPONSE ---
+			console.log(`Streaming response to user at IP ${req.ip}...`);
 
-			res.json({ reply: response.text() });
+			// 1. Set headers for Server-Sent Events (SSE)
+			res.setHeader("Content-Type", "text/event-stream");
+			res.setHeader("Cache-Control", "no-cache");
+			res.setHeader("Connection", "keep-alive");
+			res.flushHeaders(); // Send headers immediately
+
+			// 2. Call the streaming method
+			const result = await chat.sendMessageStream(q);
+
+			// 3. Iterate over the stream and send chunks
+			for await (const chunk of result.stream) {
+				const textChunk = chunk.text();
+				// Format as SSE: data: { "text": "..." }\n\n
+				res.write(`data: ${JSON.stringify({ text: textChunk })}\n\n`);
+			}
+
+			console.log(`Stream finished for user at IP ${req.ip}.`);
+			// 4. Send a final "done" message and end the connection
+			res.write(`data: ${JSON.stringify({ done: true })}\n\n`);
+			res.end();
 		} catch (err: any) {
 			console.error("ERROR in /api/chat:", err);
-			res.status(500).json({
-				reply: "Aiyoo server ko thoda pani de do 😭💦 brb!",
-			});
+			// If an error happens before streaming, send a 500
+			if (!res.headersSent) {
+				res.status(500).json({
+					reply: "Aiyoo server ko thoda pani de do 😭💦 brb!",
+				});
+			} else {
+				// If error happens mid-stream, send an error event
+				res.write(
+					`data: ${JSON.stringify({ error: err.message })}\n\n`
+				);
+				res.end();
+			}
 		}
 	});
 
