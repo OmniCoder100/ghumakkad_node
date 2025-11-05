@@ -1,17 +1,27 @@
 # This file tells Google Cloud Build what to do on every push
+
 steps:
-# Step 1: Build the Docker image
-# This is the same as your 'gcloud builds submit' command
-- name: 'gcr.io/cloud-builders/gcloud'
+# -----------------------------------------------------------------
+# --- STEP 1: Build the Docker image explicitly ---
+# We use 'docker build' and tell it *exactly* which file to use.
+- name: 'gcr.io/cloud-builders/docker'
   args:
-  - 'builds'
-  - 'submit'
-  - '.'
+  - 'build'
   - '--tag'
   - 'asia-south1-docker.pkg.dev/$PROJECT_ID/ghumakkad-repo/ghumakkad-backend:latest'
+  - '--file'
+  - 'Dockerfile'  # <-- We use the (now correctly named) Dockerfile
+  - '.'
 
-# Step 2: Deploy the new image to Cloud Run
-# This is the same as your 'gcloud run deploy' command
+# --- STEP 2: Push the built image ---
+# We now explicitly push the image we just built to the registry.
+- name: 'gcr.io/cloud-builders/docker'
+  args:
+  - 'push'
+  - 'asia-south1-docker.pkg.dev/$PROJECT_ID/ghumakkad-repo/ghumakkad-backend:latest'
+
+# --- STEP 3: Deploy the image to Cloud Run ---
+# This step is the same as before.
 - name: 'gcr.io/cloud-builders/gcloud'
   args:
   - 'run'
@@ -25,12 +35,12 @@ steps:
   - 'managed'
   - '--allow-unauthenticated'
 
-# Tell Cloud Build to use the "latest" image we just built
+# -----------------------------------------------------------------
+
+# Tell Cloud Build to use the "latest" image we just built and pushed
 images:
 - 'asia-south1-docker.pkg.dev/$PROJECT_ID/ghumakkad-repo/ghumakkad-backend:latest'
 
-# --- THIS IS THE FIX ---
-# Add this block to tell Cloud Build to use standard logging
-# instead of a dedicated log bucket, which resolves the permission error.
+# This logging option is still correct
 options:
   logging: CLOUD_LOGGING_ONLY
