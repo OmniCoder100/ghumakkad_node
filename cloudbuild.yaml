@@ -1,0 +1,30 @@
+# This file tells Google Cloud Build what to do on every push
+steps:
+# Step 1: Build the Docker image
+# This is the same as your 'gcloud builds submit' command
+- name: 'gcr.io/cloud-builders/gcloud'
+  args:
+  - 'builds'
+  - 'submit'
+  - '.'
+  - '--tag'
+  - 'asia-south1-docker.pkg.dev/$PROJECT_ID/ghumakkad-repo/ghumakkad-backend:latest'
+
+# Step 2: Deploy the new image to Cloud Run
+# This is the same as your 'gcloud run deploy' command
+- name: 'gcr.io/cloud-builders/gcloud'
+  args:
+  - 'run'
+  - 'deploy'
+  - 'ghumakkad-backend-service' # Your service name
+  - '--image'
+  - 'asia-south1-docker.pkg.dev/$PROJECT_ID/ghumakkad-repo/ghumakkad-backend:latest'
+  - '--region'
+  - 'asia-south1'
+  - '--platform'
+  - 'managed'
+  - '--allow-unauthenticated'
+
+# Tell Cloud Build to use the "latest" image we just built
+images:
+- 'asia-south1-docker.pkg.dev/$PROJECT_ID/ghumakkad-repo/ghumakkad-backend:latest'
