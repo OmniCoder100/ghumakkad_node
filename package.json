@@ -5,8 +5,8 @@
   "scripts": {
     "dev": "node --loader ts-node/esm src/server.ts",
     "ingest": "node --loader ts-node/esm src/ingest.ts",
-    "start": "node ../dist/server.js",
-    "build": "tsc",
+    "start": "node dist/server.js",
+    "build": "rm -rf dist && tsc",
     "test": "vitest",
     "debug": "node --loader ts-node/esm src/debug_sql.ts",
     "debug-admin": "node --loader ts-node/esm src/debug_admin_sql.ts"
