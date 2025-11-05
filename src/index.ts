@@ -34,6 +34,7 @@ export const createApp = (dependencies: AppDependencies): Express => {
 	const allowedOrigins = [
 		process.env.FRONTEND_URL, // Your Vercel URL
 		"http://localhost:5173",  // Vite's default dev port
+		"https://ghumakkad-college.vercel.app/" //vercel url
 	];
 
 	const corsOptions: cors.CorsOptions = {
