@@ -17,7 +17,7 @@ const startServer = async () => {
 		dotenv.config();
 		console.log("Loading environment variables...");
 
-		const PORT = process.env.PORT || 5000;
+		const PORT = process.env.PORT || 8080;
 		const GOOGLE_API_KEY = process.env.GOOGLE_API_KEY as string;
 		const SUPABASE_URL = process.env.SUPABASE_URL as string;
 		const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY as string;
